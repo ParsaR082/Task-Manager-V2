@@ -22,11 +22,12 @@ import { Task, TaskStatus, BoardColumn, DragDropResult } from '@/types'
 import { format, isAfter, isToday, isTomorrow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import { TaskForm } from '@/components/TaskForm'
 
 interface TaskBoardProps {
   tasks: Task[]
   onTaskUpdate: (taskId: string, updates: Partial<Task>) => Promise<void>
-  onTaskCreate: () => void
+  onTaskCreate?: (task: Task) => void
   loading?: boolean
 }
 
@@ -73,6 +74,7 @@ const STATUS_ICONS = {
 
 export function TaskBoard({ tasks, onTaskUpdate, onTaskCreate, loading }: TaskBoardProps) {
   const [columns, setColumns] = useState<BoardColumn[]>(BOARD_COLUMNS)
+  const [showTaskForm, setShowTaskForm] = useState(false)
   const { toast } = useToast()
 
   // Organize tasks into columns
@@ -178,6 +180,13 @@ export function TaskBoard({ tasks, onTaskUpdate, onTaskCreate, loading }: TaskBo
     if (isToday(deadline)) return 'Due today'
     if (isTomorrow(deadline)) return 'Due tomorrow'
     return format(deadline, 'MMM d')
+  }
+
+  const handleTaskCreated = (newTask: Task) => {
+    // Call the optional onTaskCreate prop if provided
+    if (onTaskCreate) {
+      onTaskCreate(newTask)
+    }
   }
 
   if (loading) {
@@ -342,7 +351,7 @@ export function TaskBoard({ tasks, onTaskUpdate, onTaskCreate, loading }: TaskBo
                       {column.id === 'TODO' && (
                         <Button
                           variant="ghost"
-                          onClick={onTaskCreate}
+                          onClick={() => setShowTaskForm(true)}
                           className="w-full h-12 border-2 border-dashed border-gray-300 hover:border-gray-400 hover:bg-gray-50"
                         >
                           <Plus className="h-4 w-4 mr-2" />
@@ -357,6 +366,12 @@ export function TaskBoard({ tasks, onTaskUpdate, onTaskCreate, loading }: TaskBo
           )
         })}
       </div>
+      
+      <TaskForm
+        open={showTaskForm}
+        onOpenChange={setShowTaskForm}
+        onTaskCreated={handleTaskCreated}
+      />
     </DragDropContext>
   )
 } 
